@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1E242C" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="description" content="Navigation auf den Verkehrsübungsplätzen Leonberg (Solitude-Ring) und Heilbronn (Wartberg) – zufällige Übungsrouten im Google-Maps-Stil.">
+  <title>Übungsplatz Navi</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app" data-mode="pick">
+  <div id="map"></div>
+
+  <!-- ===== Auswahl / Planung ===== -->
+  <header class="searchbar" id="searchbar">
+    <button class="icon-btn" id="btnBack" aria-label="Zurück">
+      <svg viewBox="0 0 24 24"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/></svg>
+    </button>
+    <div class="search-pin" id="searchPin">
+      <svg viewBox="0 0 24 24"><path fill="#EA4335" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg>
+    </div>
+    <div class="search-text" id="searchText">Übungsplatz wählen</div>
+    <button class="icon-btn" id="btnTheme" aria-label="Tag/Nacht">
+      <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.5 0-1-.1-1.4A5.5 5.5 0 0 1 13.4 3.1 9 9 0 0 0 12 3z"/></svg>
+    </button>
+    <div class="avatar" aria-hidden="true">🚗</div>
+  </header>
+
+  <section class="sheet" id="sheetPick">
+    <div class="grabber"></div>
+    <h2>Wohin geht's heute?</h2>
+    <p class="muted">Wähle deinen Verkehrsübungsplatz</p>
+    <div id="siteCards" class="site-cards"></div>
+  </section>
+
+  <section class="sheet" id="sheetPlan">
+    <div class="grabber"></div>
+    <div class="plan-head">
+      <div>
+        <div class="eta-line"><span id="planTime" class="eta-green">15 Min.</span> <span id="planDist" class="muted">(3,8 km)</span></div>
+        <div class="muted small" id="planSub">Zufällige Übungsroute · Start &amp; Ziel am Parkplatz</div>
+      </div>
+      <button class="icon-btn round" id="btnDice" aria-label="Neue Route">🎲</button>
+    </div>
+
+    <label class="slider-label" for="duration">
+      <span>Routenlänge</span><b id="durationVal">15 Min.</b>
+    </label>
+    <input type="range" id="duration" min="3" max="60" step="1" value="15">
+    <div class="slider-scale"><span>3</span><span>15</span><span>30</span><span>45</span><span>60 Min.</span></div>
+
+    <div class="chips" id="planStats"></div>
+
+    <div class="seg" role="radiogroup" aria-label="Positionsquelle">
+      <button class="seg-btn active" data-src="gps" role="radio" aria-checked="true">📡 GPS (vor Ort)</button>
+      <button class="seg-btn" data-src="sim" role="radio" aria-checked="false">🕹️ Simulation</button>
+    </div>
+
+    <div class="plan-actions">
+      <button class="btn-start" id="btnStart">
+        <svg viewBox="0 0 24 24"><path d="M12 2 4.5 20.3l.7.7L12 18l6.8 3 .7-.7z"/></svg>
+        Starten
+      </button>
+      <button class="btn-outline" id="btnPreview">Vorschau</button>
+    </div>
+    <p class="attrib">Karte: © OpenStreetMap-Mitwirkende · Straßennamen frei erfunden 😉</p>
+  </section>
+
+  <!-- ===== Navigation ===== -->
+  <div class="nav-top" id="navTop">
+    <div class="banner" id="banner">
+      <div class="banner-main">
+        <div class="banner-icon" id="bIcon"></div>
+        <div class="banner-text">
+          <div class="banner-dist" id="bDist"></div>
+          <div class="banner-street" id="bStreet"></div>
+          <div class="banner-sub" id="bSub"></div>
+        </div>
+      </div>
+      <div class="banner-then" id="bThen" hidden></div>
+    </div>
+    <div class="reroute" id="reroute" hidden>Route wird neu berechnet …</div>
+  </div>
+
+  <div class="fab-col" id="fabCol">
+    <button class="fab" id="btnMute" aria-label="Ton">
+      <svg viewBox="0 0 24 24" class="on"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>
+      <svg viewBox="0 0 24 24" class="off"><path d="M16.5 12A4.5 4.5 0 0 0 14 8v2.2l2.5 2.5V12zm2.5 0c0 .9-.2 1.8-.5 2.6l1.5 1.5A8.8 8.8 0 0 0 21 12a9 9 0 0 0-7-8.8v2.1a7 7 0 0 1 5 6.7zM4.3 3 3 4.3 7.7 9H3v6h4l5 5v-6.7l4.3 4.3a7 7 0 0 1-2.3 1.1v2.1a9 9 0 0 0 3.7-1.8l2 2 1.3-1.3L4.3 3zM12 4 9.9 6.1 12 8.2V4z"/></svg>
+    </button>
+    <button class="fab" id="btnOverview" aria-label="Übersicht">
+      <svg viewBox="0 0 24 24"><path d="m20.5 3-.2.1L15 5.1 9 3 3.4 4.9a.5.5 0 0 0-.4.5v15.1a.5.5 0 0 0 .7.5L9 18.9l6 2.1 5.6-1.9a.5.5 0 0 0 .4-.5V3.5a.5.5 0 0 0-.5-.5zM15 19l-6-2.1V5l6 2.1V19z"/></svg>
+    </button>
+  </div>
+
+  <div class="speed-box" id="speedBox">
+    <div class="limit" id="limit">30</div>
+    <div class="speed" id="speed"><b id="speedVal">0</b><span>km/h</span></div>
+  </div>
+
+  <button class="recenter" id="btnRecenter" hidden>
+    <svg viewBox="0 0 24 24"><path d="M12 2 4.5 20.3l.7.7L12 18l6.8 3 .7-.7z"/></svg>
+    Zentrieren
+  </button>
+
+  <div class="sim-ctrl" id="simCtrl">
+    <button data-mult="1" class="active">1×</button>
+    <button data-mult="2">2×</button>
+    <button data-mult="4">4×</button>
+    <button data-pause="1" aria-label="Pause">⏸</button>
+  </div>
+
+  <section class="nav-sheet" id="navSheet">
+    <button class="icon-btn round grey" id="btnStop" aria-label="Navigation beenden">
+      <svg viewBox="0 0 24 24"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>
+    </button>
+    <div class="nav-eta">
+      <div class="eta-green big" id="navTime">–</div>
+      <div class="muted" id="navInfo">–</div>
+    </div>
+    <button class="icon-btn round grey" id="btnAlt" aria-label="Übersicht">
+      <svg viewBox="0 0 24 24"><path d="M14 4l2.3 2.3-2.9 2.9 1.4 1.4 2.9-2.9L20 10V4h-6zM10 4H4v6l2.3-2.3 4.7 4.7V20h2v-8.4l-5.3-5.3L10 4z"/></svg>
+    </button>
+  </section>
+
+  <!-- ===== Ankunft ===== -->
+  <section class="sheet" id="sheetArrive">
+    <div class="grabber"></div>
+    <div class="arrive-flag">🏁</div>
+    <h2>Ziel erreicht!</h2>
+    <p class="muted" id="arriveName"></p>
+    <div class="arrive-stats" id="arriveStats"></div>
+    <div class="plan-actions">
+      <button class="btn-start" id="btnAgain">🎲 Neue Runde</button>
+      <button class="btn-outline" id="btnDone">Fertig</button>
+    </div>
+  </section>
+
+  <div class="dialog-bg" id="dialog" hidden>
+    <div class="dialog">
+      <h3 id="dlgTitle"></h3>
+      <p id="dlgText"></p>
+      <div class="dialog-actions" id="dlgActions"></div>
+    </div>
+  </div>
+  <div class="toast" id="toast" hidden></div>
+  <div class="confetti" id="confetti"></div>
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

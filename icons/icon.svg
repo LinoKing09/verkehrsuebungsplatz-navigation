@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#1A73E8"/>
+  <path d="M0 330 C120 300 170 420 300 380 S470 250 512 270 V512 H0Z" fill="#34A853"/>
+  <path d="M60 470 C140 380 220 420 260 330 S330 170 430 120" fill="none" stroke="#fff" stroke-width="44" stroke-linecap="round"/>
+  <path d="M60 470 C140 380 220 420 260 330 S330 170 430 120" fill="none" stroke="#FBBC04" stroke-width="8" stroke-linecap="round" stroke-dasharray="26 22"/>
+  <g transform="translate(256 205) rotate(30)">
+    <path d="M0 -105 L70 85 L0 50 L-70 85Z" fill="#fff"/>
+    <path d="M0 -80 L52 66 L0 38 L-52 66Z" fill="#0B57D0"/>
+  </g>
+  <g transform="translate(372 52)">
+    <rect x="0" y="0" width="8" height="120" rx="4" fill="#fff"/>
+    <g transform="translate(8 4)">
+      <rect width="84" height="56" fill="#fff"/>
+      <rect width="21" height="14" fill="#202124"/><rect x="42" width="21" height="14" fill="#202124"/>
+      <rect x="21" y="14" width="21" height="14" fill="#202124"/><rect x="63" y="14" width="21" height="14" fill="#202124"/>
+      <rect y="28" width="21" height="14" fill="#202124"/><rect x="42" y="28" width="21" height="14" fill="#202124"/>
+      <rect x="21" y="42" width="21" height="14" fill="#202124"/><rect x="63" y="42" width="21" height="14" fill="#202124"/>
+    </g>
+  </g>
+</svg>
