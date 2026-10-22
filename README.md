@@ -4,7 +4,7 @@ Turn-by-Turn-Navigation im Google-Maps-Stil für zwei Verkehrsübungsplätze:
 
 | Platz | Straßennetz | Besonderheiten |
 |---|---|---|
-| **Leonberg**: ADAC Verkehrsübungsanlage am Solitude-Ring | ≈ 2,8 km | Kreisverkehr, Wendehämmer, Start- und Zielturm |
+| **Leonberg**: ADAC Verkehrsübungsanlage am Solitude-Ring | ≈ 2,8 km | Kreisverkehr, Einbahnstraßen, Start- und Zielturm |
 | **Heilbronn**: Verkehrsübungsplatz am Wartberg (Langer Zug) | ≈ 2,7 km | Kreisverkehr, Serpentinen im Weinberg, Stoppschild |
 
 Die App erzeugt **zufällige, abwechslungsreiche Übungsrouten** mit der gewünschten Länge in Minuten und führt dich mit GPS,
@@ -15,14 +15,14 @@ Sprachansagen und grünem Abbiege-Banner darüber – so wie im echten Fahrerleb
 1. Seite im Chrome auf dem Handy öffnen → Menü ⋮ → **„Zum Startbildschirm hinzufügen“** (dann läuft sie als Vollbild-App und auch offline).
 2. Übungsplatz wählen.
 3. Mit dem Schieberegler die **Routenlänge (3–60 Min.)** einstellen. 🎲 würfelt eine neue Route. Die Chips zeigen, was dich erwartet
-   (z. B. „9× links · 8× rechts · 2× Kreisel · 1× wenden · 80 % des Platzes“). „Vorschau“ listet alle Schritte.
+   (z. B. „9× links · 8× rechts · 2× Kreisel · 80 % des Platzes“). „Vorschau“ listet alle Schritte.
 4. **GPS (vor Ort)** → *Starten*. Die Route beginnt dort, wo du gerade stehst, und endet am Parkplatz bzw. am Zielturm.
    Zu Hause kannst du mit **Simulation** (1×/2×/4×) probefahren.
 
 Während der Fahrt:
 
 - Grünes Banner mit Entfernung, Straße und „Dann …“-Vorschau, Abbiegepfeil auf der Fahrbahn
-- Deutsche Sprachansagen („In 50 Metern rechts abbiegen“, „Im Kreisverkehr die zweite Ausfahrt nehmen“, „Bitte wenden“)
+- Deutsche Sprachansagen („In 50 Metern rechts abbiegen“, „Im Kreisverkehr die zweite Ausfahrt nehmen“)
 - Geschwindigkeit + Tempolimit (30), wird rot bei Überschreitung
 - Verfahren? → „Route wird neu berechnet“ und du wirst auf die Route zurückgeführt
 - Karte verschieben/zoomen → „Zentrieren“; Übersichtskarte über den Karten-Button
@@ -50,6 +50,8 @@ Hinweise:
 - Die Übungsplätze haben keine echten Straßennamen – die Namen (Blinkerstraße, Kupplungsgasse, Anfahrberg …) sind frei erfunden. 😉
 - Die Anlage in Leonberg wurde 2024/25 saniert. Falls sich der Streckenverlauf geändert hat, in OpenStreetMap korrigieren und das
   Skript neu laufen lassen. Ein geschlossener, kleiner Ring ohne Tag wird automatisch als Kreisverkehr erkannt.
+- Korrekturen, die (noch) nicht in OSM stehen, kommen in `overrides` in `tools/extract_osm.py`
+  (z. B. Leonberg: Rechts-vor-links-Weg ist Einbahnstraße aus dem Kreisel heraus).
 
 ## Aufbau
 
@@ -63,5 +65,6 @@ sw.js, manifest           Offline-fähige PWA
 ```
 
 Die Zufallsroute ist ein gewichteter Zufallslauf durch den Straßengraphen: Bevorzugt werden noch nicht gefahrene Abschnitte und
-Manöver, die zuletzt seltener vorkamen (links/rechts/geradeaus/Kreisel), gewendet wird nur in Sackgassen. Sobald die Restzeit
+Manöver, die zuletzt seltener vorkamen (links/rechts/geradeaus/Kreisel). Sackgassen werden gar nicht erst angefahren
+(sie werden vorab durch wiederholtes Abschneiden von Endknoten erkannt), man muss also nie wenden. Sobald die Restzeit
 gerade noch für den kürzesten Rückweg reicht, geht es zum Ziel. Gleiche Routennummer + gleiche Länge = gleiche Route.

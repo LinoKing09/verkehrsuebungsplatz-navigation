@@ -46,6 +46,36 @@ export class Graph {
       a.deadEnd = this.degree.get(a.to) === 1;
       a.time = a.len / (a.rb ? V_ROUNDABOUT : a.curvy ? V_CURVY : V_STRAIGHT);
     }
+    this.markSpurs(site);
+  }
+
+  // Sackgassen-Äste finden: Endknoten wiederholt abschneiden. Bögen, die vom
+  // Netz in einen solchen Ast hineinführen (intoSpur), zwingen zum Wenden und
+  // werden von Zufallsrouten gemieden.
+  markSpurs(site) {
+    const deg = new Map(this.degree);
+    const edgesAt = new Map();
+    site.edges.forEach((e, ei) => {
+      for (const n of [e.p[0], e.p[e.p.length - 1]]) {
+        if (!edgesAt.has(n)) edgesAt.set(n, []);
+        edgesAt.get(n).push(ei);
+      }
+    });
+    const inward = new Map(); // abgeschnittene Kante -> Knoten am Sackgassen-Ende
+    const queue = [...deg.keys()].filter((n) => deg.get(n) === 1);
+    while (queue.length) {
+      const v = queue.pop();
+      if (deg.get(v) !== 1) continue;
+      const ei = edgesAt.get(v).find((x) => !inward.has(x));
+      if (ei == null) continue;
+      inward.set(ei, v);
+      deg.set(v, 0);
+      const e = site.edges[ei];
+      const u = e.p[0] === v ? e.p[e.p.length - 1] : e.p[0];
+      deg.set(u, deg.get(u) - 1);
+      if (deg.get(u) === 1) queue.push(u);
+    }
+    for (const a of this.arcs) a.intoSpur = inward.get(a.edge) === a.to;
   }
 
   addArc(edgeIdx, e, ids, pts, len) {
@@ -119,7 +149,7 @@ export class Graph {
         return path.reverse();
       }
       for (const b of this.next(a)) {
-        const nc = c + this.transitionCost(a, b) + this.arcs[b].time;
+        const nc = c + this.transitionCost(a, b) + this.arcs[b].time + (this.arcs[b].intoSpur ? 1000 : 0);
         if (nc < (best.has(b) ? best.get(b) : Infinity)) {
           best.set(b, nc);
           prev.set(b, a);
@@ -167,6 +197,7 @@ export class Graph {
         cost += (Math.abs(turnDelta(heading, segB)) / 180) * 25;
       }
       if (pr.s > a.len - 3) cost += 3; // lieber den Bogen, der hier beginnt
+      if (heading == null && a.intoSpur) cost += 5; // ohne Richtung: nicht in die Sackgasse
       if (!best || cost < best.cost) best = { arc: a.id, cost, d: pr.d, s: pr.s };
     }
     return best;
@@ -180,7 +211,7 @@ export class Graph {
     for (let i = 0; i < 40 && arc != null; i++) {
       const node = this.arcs[arc].to;
       const outs = this.out.get(node) || [];
-      const exits = outs.filter((x) => !this.arcs[x].rb);
+      const exits = outs.filter((x) => !this.arcs[x].rb && !this.arcs[x].intoSpur);
       if (exits.length) {
         const w = node === start ? 0.05 : exits.reduce((s, x) => s + 1 / (1 + 2 * (used.get(this.arcs[x].edge) || 0)), 0);
         opts.push({ node, w });
@@ -215,6 +246,9 @@ export class Graph {
       const remainBack = back.get(a.to) ?? 0;
       if (!a.rb && t + remainBack * 1.2 >= targetSec - 10) break;
       let cands = this.next(cur);
+      // Nie freiwillig in eine Sackgasse (dort müsste man wenden)
+      const open = cands.filter((b) => !this.arcs[b].intoSpur);
+      if (open.length) cands = open;
       if (a.rb && rbExit != null) {
         // Im Kreisel: bis zur geplanten Ausfahrt im Kreis bleiben
         const f = cands.filter((b) => this.arcs[b].rb === (a.to !== rbExit));
@@ -233,7 +267,6 @@ export class Graph {
           if (last.length && last[last.length - 1] === cls.type) w *= 0.7;
         }
         if (cls.type === 'roundabout') w *= 2.2;
-        if (arc.deadEnd) w *= arc.len > 25 ? 0.12 : 0.01; // gelegentlich Wenden üben
         return Math.max(w, 1e-4);
       });
       let r = rnd() * weights.reduce((s, x) => s + x, 0);

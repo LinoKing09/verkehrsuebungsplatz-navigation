@@ -19,6 +19,10 @@ SITES = [
         "start_way": "49184499",  # Start- und Zielturm
         "bbox": (9.0390, 48.7635, 9.0565, 48.7710),
         "maxspeed": 30,
+        # Korrekturen vor Ort: OSM-Weg-ID -> Tags
+        "overrides": {
+            "28731474": {"oneway": "yes"},  # Rechts-vor-links-Weg: Einbahn aus dem Kreisel heraus
+        },
         "names": ["Solitude-Ring", "Glemseck-Kurve", "Mahdentalweg", "Blinkerstraße", "Schulterblick-Allee",
                   "Kupplungsgasse", "Spiegelweg", "Vorfahrtsring", "Handbremsweg", "Zielturmstraße",
                   "Boxengasse", "Rechts-vor-links-Weg", "Parklückenstraße", "Lenkradallee", "Seewiesenweg",
@@ -93,6 +97,10 @@ def build(site, cache):
     ntags = {n.get("id"): {t.get("k"): t.get("v") for t in n.findall("tag")} for n in root.iter("node")}
     ways = {w.get("id"): ([nd.get("ref") for nd in w.findall("nd")], {t.get("k"): t.get("v") for t in w.findall("tag")})
             for w in root.iter("way")}
+
+    for wid, tags in site.get("overrides", {}).items():
+        nds, t = ways[wid]
+        ways[wid] = (nds, dict(t, **tags))
 
     area = [raw[i] for i in ways[site["area_way"]][0]]
     lat0 = sum(p[0] for p in area) / len(area)

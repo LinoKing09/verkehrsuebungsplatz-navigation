@@ -203,8 +203,10 @@ function planPad() {
 function startArcFor(p = null, heading = null) {
   const g = S.graph;
   if (p) return g.nearestArc(p, heading);
-  const outs = g.out.get(S.site.start) || [];
-  return { arc: outs[S.seed % outs.length], s: 0 };
+  const all = g.out.get(S.site.start) || [];
+  const outs = all.filter((a) => !g.arcs[a].intoSpur);
+  const pick = outs.length ? outs : all;
+  return { arc: pick[S.seed % pick.length], s: 0 };
 }
 
 function makeRoute(startP = null, heading = null) {
