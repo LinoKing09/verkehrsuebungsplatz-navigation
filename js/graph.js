@@ -160,15 +160,16 @@ export class Graph {
     return null;
   }
 
-  // Fahrzeit von jedem Knoten zum Ziel (rückwärts, grob – nur als Schätzung)
-  timeToNode(goal) {
+  // Fahrzeit von jedem Knoten zum nächsten Ziel (rückwärts, grob – nur als Schätzung)
+  timeToNode(goals) {
     const rin = new Map();
     for (const a of this.arcs) {
       if (!rin.has(a.to)) rin.set(a.to, []);
       rin.get(a.to).push(a);
     }
-    const t = new Map([[goal, 0]]);
-    const q = [goal];
+    goals = Array.isArray(goals) ? goals : [goals];
+    const t = new Map(goals.map((g) => [g, 0]));
+    const q = [...goals];
     while (q.length) {
       let mi = 0;
       for (let i = 1; i < q.length; i++) if (t.get(q[i]) < t.get(q[mi])) mi = i;
@@ -229,9 +230,13 @@ export class Graph {
   // Gewichteter Zufallslauf mit Vorliebe für Unbekanntes und abwechselnde
   // Manöver; wenn die Restzeit gerade noch für die Rückfahrt reicht, geht es
   // auf kürzestem Weg zum Ziel.
-  randomRoute({ startArc, startS = 0, goal, targetSec, seed }) {
+  // focus: 'mix' (ausgewogen), 'roundabout', 'left' oder 'cover' (ganzer Platz)
+  randomRoute({ startArc, startS = 0, goal, targetSec, seed, focus = 'mix' }) {
     const rnd = mulberry32(seed);
     const back = this.timeToNode(goal);
+    // "Viel Kreisel": zu Kreisel-Einfahrten hingezogen werden
+    const rbEntries = [...new Set(this.arcs.filter((x) => x.rb).map((x) => x.from))];
+    const toRb = focus === 'roundabout' && rbEntries.length ? this.timeToNode(rbEntries) : null;
     const used = new Map();
     const typeCount = { straight: 1, slight: 1, turn: 1, sharp: 1, uturn: 1, roundabout: 1, left: 1, right: 1 };
     const arcs = [startArc];
@@ -254,19 +259,28 @@ export class Graph {
         const f = cands.filter((b) => this.arcs[b].rb === (a.to !== rbExit));
         if (f.length) cands = f;
       }
+      // "Ganzer Platz": zum nächsten noch nicht gefahrenen Abschnitt hingezogen werden
+      let toNew = null;
+      if (focus === 'cover' && cands.every((b) => used.get(this.arcs[b].edge))) {
+        const fresh = this.arcs.filter((x) => !used.get(x.edge) && !x.intoSpur).map((x) => x.from);
+        if (fresh.length) toNew = this.timeToNode([...new Set(fresh)]);
+      }
       const weights = cands.map((b) => {
         const arc = this.arcs[b];
         const cls = this.classify(cur, b);
         const side = cls.d > 0 ? 'right' : 'left';
         let w = 1;
         const u = used.get(arc.edge) || 0;
-        w *= 1 / (1 + 2.5 * Math.pow(u, 1.6));
+        w *= focus === 'cover' ? 1 / (1 + 8 * u * u) : 1 / (1 + 2.5 * Math.pow(u, 1.6));
         if (cands.length > 1) {
           w *= 1.6 / typeCount[cls.type];
           if (cls.type === 'turn' || cls.type === 'sharp' || cls.type === 'slight') w *= 1.4 / typeCount[side];
           if (last.length && last[last.length - 1] === cls.type) w *= 0.7;
         }
-        if (cls.type === 'roundabout') w *= 2.2;
+        if (cls.type === 'roundabout') w *= focus === 'roundabout' ? 12 : 2.2;
+        if (toRb && !arc.rb) w *= Math.exp(((toRb.get(a.to) ?? 0) - (toRb.get(arc.to) ?? 0)) / 10);
+        if (toNew && u > 0) w *= Math.exp(((toNew.get(a.to) ?? 0) - (toNew.get(arc.to) ?? 0)) / 10);
+        if (focus === 'left' && ['turn', 'sharp', 'slight'].includes(cls.type)) w *= cls.d < 0 ? 4 : 0.35;
         return Math.max(w, 1e-4);
       });
       let r = rnd() * weights.reduce((s, x) => s + x, 0);
@@ -463,8 +477,10 @@ export class Route {
       if (m.type === 'turn') c[m.mod === 'straight' ? 'straight' : m.mod.endsWith('right') ? 'right' : 'left']++;
       else if (m.type in c) c[m.type]++;
     }
-    const edges = new Set(this.arcIds.map((id) => this.g.arcs[id].edge));
-    c.coverage = edges.size / this.g.site.edges.length;
+    // Anteil der befahrbaren Abschnitte (Sackgassen zählen nicht mit)
+    const spur = new Set(this.g.arcs.filter((a) => a.intoSpur).map((a) => a.edge));
+    const edges = new Set(this.arcIds.map((id) => this.g.arcs[id].edge).filter((e) => !spur.has(e)));
+    c.coverage = edges.size / Math.max(1, this.g.site.edges.length - spur.size);
     return c;
   }
 }

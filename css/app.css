@@ -109,6 +109,27 @@ input[type=range] { -webkit-appearance: none; appearance: none; background: tran
 .seg-btn.active { background: #D3E3FD; color: #041E49; font-weight: 500; }
 :root[data-theme="night"] .seg-btn.active { background: #004A77; color: #C2E7FF; }
 
+.head-btns { display: flex; gap: 8px; }
+.icon-btn.round svg { width: 22px; height: 22px; }
+
+.focus { display: flex; gap: 8px; overflow-x: auto; margin: 16px -20px 0; padding: 0 20px 2px; scrollbar-width: none; touch-action: pan-x; }
+.focus::-webkit-scrollbar { display: none; }
+.focus button { flex: none; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-size: 14px; white-space: nowrap; }
+.focus button.active { background: #D3E3FD; color: #041E49; border-color: transparent; font-weight: 500; }
+:root[data-theme="night"] .focus button.active { background: #004A77; color: #C2E7FF; }
+
+.log { margin-top: 20px; }
+.log h3 { font-size: 16px; font-weight: 500; margin: 0 0 8px; }
+.log-totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+.log-totals div { background: var(--surface2); border-radius: 14px; padding: 8px 4px; text-align: center; }
+.log-totals b { display: block; font-size: 18px; font-weight: 500; }
+.log-totals span { font-size: 12px; color: var(--muted); }
+.log-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.log-row:last-child { border-bottom: 0; }
+.log-row .log-main { flex: 1; min-width: 0; }
+.log-row .log-main div:last-child { color: var(--muted); font-size: 12px; }
+.log-row button { color: var(--blue); font-weight: 500; padding: 6px 10px; border-radius: 16px; border: 1px solid var(--line); flex: none; }
+
 .plan-actions { display: flex; gap: 10px; margin-top: 14px; }
 .btn-start {
   flex: 1; height: 50px; border-radius: 25px; background: var(--blue-dark); color: #fff; font-size: 17px; font-weight: 500;

@@ -14,10 +14,13 @@ Sprachansagen und grünem Abbiege-Banner darüber – so wie im echten Fahrerleb
 
 1. Seite im Chrome auf dem Handy öffnen → Menü ⋮ → **„Zum Startbildschirm hinzufügen“** (dann läuft sie als Vollbild-App und auch offline).
 2. Übungsplatz wählen.
-3. Mit dem Schieberegler die **Routenlänge (3–60 Min.)** einstellen. 🎲 würfelt eine neue Route. Die Chips zeigen, was dich erwartet
-   (z. B. „9× links · 8× rechts · 2× Kreisel · 80 % des Platzes“). „Vorschau“ listet alle Schritte.
+3. Mit dem Schieberegler die **Routenlänge (3–60 Min.)** einstellen und einen **Schwerpunkt** wählen
+   (Ausgewogen · Viel Kreisel · Linksabbiegen · Ganzer Platz). 🎲 würfelt eine neue Route, das Teilen-Symbol erzeugt einen Link
+   genau zu dieser Route. Die Chips zeigen, was dich erwartet (z. B. „9× links · 8× rechts · 2× Kreisel · 80 % des Platzes“).
+   „Vorschau“ listet alle Schritte.
 4. **GPS (vor Ort)** → *Starten*. Die Route beginnt dort, wo du gerade stehst, und endet am Parkplatz bzw. am Zielturm.
-   Zu Hause kannst du mit **Simulation** (1×/2×/4×) probefahren.
+   Stehst du noch neben der Straße, führt eine gepunktete Linie zur Route. Zu Hause kannst du mit **Simulation** (1×/2×/4×) probefahren.
+5. Im Ziel landet die Fahrt im **Fahrtenbuch** (Startseite) – mit „Nochmal“ fährst du dieselbe Route erneut.
 
 Während der Fahrt:
 
@@ -26,7 +29,10 @@ Während der Fahrt:
 - Geschwindigkeit + Tempolimit (30), wird rot bei Überschreitung
 - Verfahren? → „Route wird neu berechnet“ und du wirst auf die Route zurückgeführt
 - Karte verschieben/zoomen → „Zentrieren“; Übersichtskarte über den Karten-Button
+- Vibration bei Abbiegeansagen und im Ziel
 - Bildschirm bleibt an (Wake Lock), Tag-/Nachtdesign automatisch (🌙 oben schaltet um)
+
+Was sich zwischen den Versionen geändert hat, steht im [CHANGELOG](CHANGELOG.md).
 
 > ⚠️ Handy in eine Halterung, Bedienung nur im Stand. Es gelten immer die Schilder vor Ort und die Platzregeln.
 

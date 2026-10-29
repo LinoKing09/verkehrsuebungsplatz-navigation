@@ -7,6 +7,11 @@ const SITES = [
   { id: 'heilbronn', file: 'data/heilbronn.json', title: 'Heilbronn', sub: 'Verkehrsübungsplatz am Wartberg', dest: 'Parkplatz Langer Zug' },
 ];
 
+const VERSION = '1.1.0';
+const FOCUS = {
+  mix: 'Ausgewogen', roundabout: 'Viel Kreisel', left: 'Linksabbiegen', cover: 'Ganzer Platz',
+};
+
 const $ = (id) => document.getElementById(id);
 const app = $('app');
 const store = {
@@ -29,6 +34,7 @@ const S = {
   route: null,
   seed: store.get('seed', 1 + Math.floor(Math.random() * 9999)),
   minutes: store.get('minutes', 15),
+  focus: store.get('focus', 'mix'),
   src: store.get('src', 'gps'),
   gps: null, // letzte GPS-Position {p, heading, speed, acc, t}
   watchId: null,
@@ -85,6 +91,10 @@ function dialog(title, text, actions) {
   });
 }
 
+function buzz(pattern) {
+  try { navigator.vibrate?.(pattern); } catch { /* nicht unterstützt */ }
+}
+
 function setMode(m) {
   S.mode = m;
   app.dataset.mode = m;
@@ -129,11 +139,63 @@ async function loadSites() {
     b.onclick = () => selectSite(m.id);
     box.appendChild(b);
   }
+  renderLog();
   // Entfernung anzeigen, falls GPS schon erlaubt ist
   try {
     const perm = await navigator.permissions?.query({ name: 'geolocation' });
     if (perm?.state === 'granted') startWatch();
   } catch { /* egal */ }
+}
+
+// ---------- Fahrtenbuch ----------
+function renderLog() {
+  const log = store.get('log', []);
+  const box = $('logBox');
+  box.hidden = !log.length;
+  if (!log.length) return;
+  const real = log.filter((e) => !e.sim);
+  const km = real.reduce((s, e) => s + e.km, 0);
+  const mins = real.reduce((s, e) => s + e.secs, 0) / 60;
+  const fmtDate = (t) => new Date(t).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
+  box.innerHTML = `<h3>Dein Fahrtenbuch</h3>` +
+    (real.length ? `<div class="log-totals"><div><b>${real.length}</b><span>Fahrten vor Ort</span></div>` +
+    `<div><b>${km.toFixed(1).replace('.', ',')}</b><span>km</span></div>` +
+    `<div><b>${mins >= 60 ? (mins / 60).toFixed(1).replace('.', ',') + ' h' : Math.round(mins) + ' min'}</b><span>am Steuer</span></div></div>` : '') +
+    log.slice(0, 5).map((e, i) => {
+      const m = SITES.find((x) => x.id === e.site);
+      return `<div class="log-row"><span>${e.sim ? '🕹️' : '🚗'}</span><div class="log-main">` +
+        `<div>${m ? m.title : e.site} · ${Math.max(1, Math.round(e.secs / 60))} Min. · ${e.km.toFixed(1).replace('.', ',')} km</div>` +
+        `<div>${fmtDate(e.t)} · Route #${e.seed} · ${FOCUS[e.focus] || FOCUS.mix} · ${e.man} Manöver</div></div>` +
+        `<button data-log="${i}">Nochmal</button></div>`;
+    }).join('');
+  box.querySelectorAll('[data-log]').forEach((b) => {
+    b.onclick = () => {
+      const e = log[+b.dataset.log];
+      openRoute(e.site, e.min, e.seed, e.focus);
+    };
+  });
+}
+
+function logDrive(entry) {
+  const log = store.get('log', []);
+  log.unshift(entry);
+  store.set('log', log.slice(0, 50));
+  renderLog();
+}
+
+// Platz mit bestimmter Länge/Route/Schwerpunkt öffnen (Fahrtenbuch, geteilter Link)
+function openRoute(siteId, minutes, seed, focus) {
+  if (!S.sites[siteId]) return false;
+  S.minutes = Math.max(3, Math.min(60, Math.round(minutes) || 15));
+  S.seed = Math.max(1, Math.round(seed) || 1);
+  S.focus = FOCUS[focus] ? focus : 'mix';
+  store.set('minutes', S.minutes);
+  store.set('seed', S.seed);
+  store.set('focus', S.focus);
+  syncSlider();
+  syncFocus();
+  selectSite(siteId);
+  return true;
 }
 
 function netLength(site) {
@@ -212,7 +274,7 @@ function startArcFor(p = null, heading = null) {
 function makeRoute(startP = null, heading = null) {
   const g = S.graph;
   const st = startArcFor(startP, heading);
-  return g.randomRoute({ startArc: st.arc, startS: st.s, goal: S.site.start, targetSec: S.minutes * 60, seed: S.seed });
+  return g.randomRoute({ startArc: st.arc, startS: st.s, goal: S.site.start, targetSec: S.minutes * 60, seed: S.seed, focus: S.focus });
 }
 
 function planRoute() {
@@ -222,7 +284,7 @@ function planRoute() {
   const r = S.route;
   $('planTime').textContent = fmtMin(r.totalTime);
   $('planDist').textContent = `(${fmtDist(r.length)})`;
-  $('planSub').textContent = `Übungsroute #${S.seed} · Ziel: ${S.meta.dest}`;
+  $('planSub').textContent = `Übungsroute #${S.seed} · ${FOCUS[S.focus]} · Ziel: ${S.meta.dest}`;
   const st = r.stats();
   const chip = (icon, text) => `<span class="chip">${icon}${text}</span>`;
   const ic = (m) => maneuverSVG(m, 18);
@@ -260,6 +322,43 @@ $('btnDice').onclick = () => {
   planRoute();
   const b = $('btnDice');
   b.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 450 });
+};
+
+document.querySelectorAll('#focus button').forEach((b) => {
+  b.onclick = () => {
+    S.focus = b.dataset.focus;
+    store.set('focus', S.focus);
+    syncFocus();
+    S.free = false;
+    planRoute();
+  };
+});
+function syncFocus() {
+  document.querySelectorAll('#focus button').forEach((b) => {
+    const on = b.dataset.focus === S.focus;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-checked', on);
+  });
+}
+syncFocus();
+
+$('btnShare').onclick = async () => {
+  const url = new URL(location.href.split('?')[0].split('#')[0]);
+  url.searchParams.set('platz', S.site.id);
+  url.searchParams.set('min', S.minutes);
+  url.searchParams.set('route', S.seed);
+  url.searchParams.set('fokus', S.focus);
+  const text = `Übungsroute #${S.seed} in ${S.meta.title}: ${fmtMin(S.route.totalTime)}, ${fmtDist(S.route.length)} (${FOCUS[S.focus]})`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'Übungsplatz Navi', text, url: url.href });
+      return;
+    }
+    await navigator.clipboard.writeText(url.href);
+    toast('Link kopiert 🔗');
+  } catch (e) {
+    if (e?.name !== 'AbortError') toast('Teilen nicht möglich');
+  }
 };
 
 document.querySelectorAll('.seg-btn').forEach((b) => {
@@ -392,7 +491,8 @@ function startNav(sim) {
     route: r,
     tracker: new Tracker(r),
     fix: null,
-    res: { s: 0, onRoute: true },
+    res: { s: 0, onRoute: !!sim, d: 0 },
+    joined: !!sim, // GPS: erst auf der Route, dann geht's los
     dispS: 0,
     dispP: r.pts[0],
     dispH: r.maneuvers[0].b,
@@ -416,10 +516,17 @@ function startNav(sim) {
   Object.assign(view.cam, { x: r.pts[0][0], y: r.pts[0][1], heading: S.nav.dispH });
   keepAwake();
   if (!sim) startWatch();
-  // Startansage
+  // Startansage (GPS: wer noch neben der Straße steht, fährt erst zur Route)
+  if (!sim && S.gps?.p && dist(S.gps.p, r.pts[0]) < 25) S.nav.joined = true;
+  if (S.nav.joined) announceStart();
+  else voice.say('Fahren Sie zur Route.');
+}
+
+function announceStart() {
+  const n = S.nav, r = n.route;
   const m0 = r.maneuvers[0], m1 = r.maneuvers[1];
   voice.say(speech(m0, null, S.meta.dest, m1 && m1.s < 60 ? m1 : null));
-  if (m1 && m1.s < 60) S.nav.spoken.set(1, { far: true, near: false });
+  if (m1 && m1.s < 60) n.spoken.set(1, { far: true, near: false });
 }
 
 function handleFix(fix) {
@@ -433,7 +540,12 @@ function handleFix(fix) {
   }
   n.lastP = fix.p;
   n.res = n.tracker.update(fix);
-  if (!n.sim && n.tracker.off >= 3 && performance.now() - n.rerouting > 6000) doReroute(fix);
+  if (!n.joined && n.res.onRoute) {
+    n.joined = true;
+    n.nextIdx = -1;
+    announceStart();
+  }
+  if (!n.sim && n.joined && n.tracker.off >= 3 && performance.now() - n.rerouting > 6000) doReroute(fix);
 }
 
 function doReroute(fix) {
@@ -444,6 +556,7 @@ function doReroute(fix) {
   $('reroute').hidden = false;
   setTimeout(() => ($('reroute').hidden = true), 1800);
   voice.say('Route wird neu berechnet.');
+  buzz(200);
   n.route = nr;
   n.tracker = new Tracker(nr);
   n.res = n.tracker.update(fix);
@@ -500,7 +613,7 @@ function navFrame(dt, now) {
   }
 
   // Ansagen
-  if (n.res.onRoute) speakLogic(r, idx, d);
+  if (n.res.onRoute && n.joined) speakLogic(r, idx, d);
 
   // Ankunft
   if (n.res.s >= r.length - 6 || (n.sim && n.sim.s >= r.length - 0.5)) {
@@ -511,7 +624,8 @@ function navFrame(dt, now) {
   // UI (gedrosselt)
   if (now - (n.uiT || 0) > 200 || idx !== n.nextIdx) {
     n.uiT = now;
-    updateBanner(r, idx, d);
+    if (n.joined) updateBanner(r, idx, d);
+    else joinBanner(r);
     const elapsed = (now - n.t0) / 1000;
     const modeled = r.totalTime - r.remainingTime(n.dispS);
     if (elapsed > 45 && modeled > 30) n.pace += (Math.max(0.7, Math.min(1.6, elapsed / modeled)) - n.pace) * 0.02;
@@ -541,7 +655,20 @@ function speakLogic(r, idx, d) {
     flags.far = true;
     if (m.type === 'arrive') return; // kommt bei arrive()
     voice.say(speech(m, null, S.meta.dest, then));
+    buzz(60);
   }
+}
+
+function joinBanner(r) {
+  const n = S.nav;
+  if (n.nextIdx !== -2) {
+    n.nextIdx = -2;
+    $('bIcon').innerHTML = maneuverSVG({ type: 'depart' }, 56);
+    $('bStreet').textContent = 'Zur Route fahren';
+    $('bSub').textContent = 'Start: ' + r.maneuvers[0].name;
+    $('bThen').hidden = true;
+  }
+  $('bDist').textContent = n.fix ? fmtDist(n.res.d) : 'GPS …';
 }
 
 function updateBanner(r, idx, d) {
@@ -570,13 +697,17 @@ function arrive() {
   if (n.arrived) return;
   n.arrived = true;
   voice.say(speech({ type: 'arrive' }, null, S.meta.dest));
+  buzz([90, 60, 90, 60, 250]);
   const secs = (performance.now() - n.t0) / 1000 * (n.sim ? n.sim.mult : 1);
   const st = n.route.stats();
+  const km = Math.max(n.driven, n.route.length) / 1000;
+  const man = st.left + st.right + st.straight + st.roundabout + st.uturn;
+  logDrive({ t: Date.now(), site: S.site.id, min: S.minutes, seed: S.seed, focus: S.focus, secs, km, man, sim: !!n.sim });
   $('arriveName').textContent = S.meta.dest + ' · ' + S.meta.sub;
   $('arriveStats').innerHTML =
-    `<div><b>${fmtMin(secs).replace(' Min.', '')}</b><span>Minuten</span></div>` +
-    `<div><b>${(Math.max(n.driven, n.route.length) / 1000).toFixed(1).replace('.', ',')}</b><span>km</span></div>` +
-    `<div><b>${st.left + st.right + st.roundabout + st.uturn}</b><span>Manöver</span></div>`;
+    `<div><b>${Math.max(1, Math.round(secs / 60))}</b><span>Minuten</span></div>` +
+    `<div><b>${km.toFixed(1).replace('.', ',')}</b><span>km</span></div>` +
+    `<div><b>${man}</b><span>Manöver</span></div>`;
   const done = n.route;
   stopNav();
   setMode('arrive');
@@ -754,15 +885,22 @@ function frame(now) {
       nextManeuver: nextM,
       me,
       dest: S.site.nodes[S.site.start],
+      join: n && !n.joined && n.fix ? [n.dispP, n.res.pt || n.route.pts[0]] : null,
     });
   }
   requestAnimationFrame(frame);
 }
 
 // ---------- Start ----------
+$('ver').textContent = 'v' + VERSION;
+
 loadSites().then(() => {
+  const q = new URLSearchParams(location.search);
   const last = store.get('site', null);
-  if (last && S.sites[last]) {
+  if (q.has('platz') && openRoute(q.get('platz'), +q.get('min'), +q.get('route'), q.get('fokus'))) {
+    history.replaceState(null, '', location.pathname);
+    toast(`Geteilte Route #${S.seed} geladen`);
+  } else if (last && S.sites[last]) {
     selectSite(last);
   } else {
     const site = S.sites[SITES[0].id];
@@ -775,8 +913,12 @@ loadSites().then(() => {
 });
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController) toast(`App aktualisiert auf v${VERSION} ✨`);
+  });
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
 // Zum Testen in der Konsole
-window.__vup = { S, view, planRoute };
+window.__vup = { S, view, planRoute, handleFix };

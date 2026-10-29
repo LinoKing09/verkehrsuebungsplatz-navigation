@@ -243,6 +243,12 @@ export class MapView {
 
     // Route
     if (state.route) this.drawRoute(ctx, state, px);
+    // Gepunktete Linie vom Standort zur Route (wie bei Google Maps)
+    if (state.join) {
+      ctx.setLineDash([0.1, 9 * px]);
+      this.polyline(state.join, t.routeCase, 5 * px);
+      ctx.setLineDash([]);
+    }
     this.drawOverlay(state);
   }
 

@@ -38,6 +38,7 @@
     <h2>Wohin geht's heute?</h2>
     <p class="muted">Wähle deinen Verkehrsübungsplatz</p>
     <div id="siteCards" class="site-cards"></div>
+    <div id="logBox" class="log" hidden></div>
   </section>
 
   <section class="sheet" id="sheetPlan">
@@ -47,7 +48,12 @@
         <div class="eta-line"><span id="planTime" class="eta-green">15 Min.</span> <span id="planDist" class="muted">(3,8 km)</span></div>
         <div class="muted small" id="planSub">Zufällige Übungsroute · Start &amp; Ziel am Parkplatz</div>
       </div>
-      <button class="icon-btn round" id="btnDice" aria-label="Neue Route">🎲</button>
+      <div class="head-btns">
+        <button class="icon-btn round" id="btnShare" aria-label="Route teilen">
+          <svg viewBox="0 0 24 24"><path d="M18 16.1c-.8 0-1.4.3-2 .8l-7.1-4.2c.1-.2.1-.5.1-.7s0-.5-.1-.7L16 7.2c.5.5 1.2.8 2 .8a3 3 0 1 0-3-3c0 .2 0 .5.1.7L8 9.8A3 3 0 1 0 6 15c.8 0 1.5-.3 2-.8l7.1 4.2-.1.6a2.9 2.9 0 1 0 3-2.9z"/></svg>
+        </button>
+        <button class="icon-btn round" id="btnDice" aria-label="Neue Route">🎲</button>
+      </div>
     </div>
 
     <label class="slider-label" for="duration">
@@ -55,6 +61,13 @@
     </label>
     <input type="range" id="duration" min="3" max="60" step="1" value="15">
     <div class="slider-scale"><span>3</span><span>15</span><span>30</span><span>45</span><span>60 Min.</span></div>
+
+    <div class="focus" id="focus" role="radiogroup" aria-label="Übungsschwerpunkt">
+      <button data-focus="mix" role="radio">⚖️ Ausgewogen</button>
+      <button data-focus="roundabout" role="radio">🔄 Viel Kreisel</button>
+      <button data-focus="left" role="radio">↰ Linksabbiegen</button>
+      <button data-focus="cover" role="radio">🗺️ Ganzer Platz</button>
+    </div>
 
     <div class="chips" id="planStats"></div>
 
@@ -70,7 +83,7 @@
       </button>
       <button class="btn-outline" id="btnPreview">Vorschau</button>
     </div>
-    <p class="attrib">Karte: © OpenStreetMap-Mitwirkende · Straßennamen frei erfunden 😉</p>
+    <p class="attrib"><span id="ver"></span> · Karte: © OpenStreetMap-Mitwirkende · Straßennamen frei erfunden 😉</p>
   </section>
 
   <!-- ===== Navigation ===== -->
