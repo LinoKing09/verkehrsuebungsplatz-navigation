@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+- **Start immer an der Einfahrt** (oder an der aktuellen GPS-Position, wenn du schon auf dem Platz bist); die Route endet
+  wieder an der Einfahrt. Leonberg: Haupteinfahrt mit Schranken von der Mahdentalstraße beim ADAC-Gebäude
+  (vorher: am Start- und Zielturm), Heilbronn: Zufahrt „Langer Zug“.
+
 ## 1.1.0 – Release 🚀
 
 - **Übungsschwerpunkt**: Ausgewogen, Viel Kreisel (≈ 2,5–3× so viele Kreisel), Linksabbiegen (≈ 2:1 links) oder

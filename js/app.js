@@ -3,11 +3,11 @@ import { MapView } from './render.js';
 import { Voice, Tracker, Simulator, reroute, speech, bannerText, maneuverSVG, fmtDist, fmtMin } from './nav.js';
 
 const SITES = [
-  { id: 'leonberg', file: 'data/leonberg.json', title: 'Leonberg', sub: 'ADAC Verkehrsübungsanlage am Solitude-Ring', dest: 'Start- und Zielturm' },
-  { id: 'heilbronn', file: 'data/heilbronn.json', title: 'Heilbronn', sub: 'Verkehrsübungsplatz am Wartberg', dest: 'Parkplatz Langer Zug' },
+  { id: 'leonberg', file: 'data/leonberg.json', title: 'Leonberg', sub: 'ADAC Verkehrsübungsanlage am Solitude-Ring', dest: 'Einfahrt Mahdentalstraße' },
+  { id: 'heilbronn', file: 'data/heilbronn.json', title: 'Heilbronn', sub: 'Verkehrsübungsplatz am Wartberg', dest: 'Einfahrt Langer Zug' },
 ];
 
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 const FOCUS = {
   mix: 'Ausgewogen', roundabout: 'Viel Kreisel', left: 'Linksabbiegen', cover: 'Ganzer Platz',
 };
@@ -90,6 +90,12 @@ function dialog(title, text, actions) {
     $('dialog').hidden = false;
   });
 }
+
+// Der App-Container darf nie scrollen (z. B. wenn ein Element außerhalb fokussiert wird)
+app.addEventListener('scroll', () => {
+  app.scrollTop = 0;
+  app.scrollLeft = 0;
+});
 
 function buzz(pattern) {
   try { navigator.vibrate?.(pattern); } catch { /* nicht unterstützt */ }
@@ -284,7 +290,7 @@ function planRoute() {
   const r = S.route;
   $('planTime').textContent = fmtMin(r.totalTime);
   $('planDist').textContent = `(${fmtDist(r.length)})`;
-  $('planSub').textContent = `Übungsroute #${S.seed} · ${FOCUS[S.focus]} · Ziel: ${S.meta.dest}`;
+  $('planSub').textContent = `Übungsroute #${S.seed} · ${FOCUS[S.focus]} · Start ${onSite ? 'an deinem Standort' : 'an der Einfahrt'}`;
   const st = r.stats();
   const chip = (icon, text) => `<span class="chip">${icon}${text}</span>`;
   const ic = (m) => maneuverSVG(m, 18);

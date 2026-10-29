@@ -1,5 +1,5 @@
 // Offline-Cache: Auf dem Übungsplatz ist der Empfang nicht immer gut.
-const CACHE = 'vup-nav-v3';
+const CACHE = 'vup-nav-v4';
 const FILES = [
   './', 'index.html', 'css/app.css', 'js/app.js', 'js/graph.js', 'js/render.js', 'js/nav.js',
   'data/leonberg.json', 'data/heilbronn.json', 'manifest.webmanifest',

@@ -4,7 +4,7 @@ Turn-by-Turn-Navigation im Google-Maps-Stil für zwei Verkehrsübungsplätze:
 
 | Platz | Straßennetz | Besonderheiten |
 |---|---|---|
-| **Leonberg**: ADAC Verkehrsübungsanlage am Solitude-Ring | ≈ 2,8 km | Kreisverkehr, Einbahnstraßen, Start- und Zielturm |
+| **Leonberg**: ADAC Verkehrsübungsanlage am Solitude-Ring | ≈ 2,8 km | Kreisverkehr, Einbahnstraßen, Start- und Zielturm der alten Rennstrecke |
 | **Heilbronn**: Verkehrsübungsplatz am Wartberg (Langer Zug) | ≈ 2,7 km | Kreisverkehr, Serpentinen im Weinberg, Stoppschild |
 
 Die App erzeugt **zufällige, abwechslungsreiche Übungsrouten** mit der gewünschten Länge in Minuten und führt dich mit GPS,
@@ -18,7 +18,8 @@ Sprachansagen und grünem Abbiege-Banner darüber – so wie im echten Fahrerleb
    (Ausgewogen · Viel Kreisel · Linksabbiegen · Ganzer Platz). 🎲 würfelt eine neue Route, das Teilen-Symbol erzeugt einen Link
    genau zu dieser Route. Die Chips zeigen, was dich erwartet (z. B. „9× links · 8× rechts · 2× Kreisel · 80 % des Platzes“).
    „Vorschau“ listet alle Schritte.
-4. **GPS (vor Ort)** → *Starten*. Die Route beginnt dort, wo du gerade stehst, und endet am Parkplatz bzw. am Zielturm.
+4. **GPS (vor Ort)** → *Starten*. Die Route beginnt dort, wo du gerade stehst – sonst (Simulation, oder noch nicht vor Ort)
+   immer an der **Einfahrt** des Platzes – und endet an der Einfahrt.
    Stehst du noch neben der Straße, führt eine gepunktete Linie zur Route. Zu Hause kannst du mit **Simulation** (1×/2×/4×) probefahren.
 5. Im Ziel landet die Fahrt im **Fahrtenbuch** (Startseite) – mit „Nochmal“ fährst du dieselbe Route erneut.
 
@@ -56,6 +57,8 @@ Hinweise:
 - Die Übungsplätze haben keine echten Straßennamen – die Namen (Blinkerstraße, Kupplungsgasse, Anfahrberg …) sind frei erfunden. 😉
 - Die Anlage in Leonberg wurde 2024/25 saniert. Falls sich der Streckenverlauf geändert hat, in OpenStreetMap korrigieren und das
   Skript neu laufen lassen. Ein geschlossener, kleiner Ring ohne Tag wird automatisch als Kreisverkehr erkannt.
+- Start und Ziel ist die Einfahrt (`entrance_node` in `tools/extract_osm.py`): Leonberg die Haupteinfahrt mit Schranken
+  von der Mahdentalstraße beim ADAC-Gebäude, Heilbronn die Zufahrt „Langer Zug“.
 - Korrekturen, die (noch) nicht in OSM stehen, kommen in `overrides` in `tools/extract_osm.py`
   (z. B. Leonberg: Rechts-vor-links-Weg ist Einbahnstraße aus dem Kreisel heraus).
 

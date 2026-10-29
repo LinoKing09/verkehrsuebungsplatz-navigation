@@ -67,7 +67,8 @@ svg { fill: currentColor; }
 .sheet {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
   background: var(--surface); border-radius: 24px 24px 0 0; box-shadow: 0 -2px 10px rgba(0, 0, 0, .15);
-  padding: 8px 20px calc(16px + var(--safe-bottom)); transform: translateY(110%); transition: transform .35s cubic-bezier(.2, .8, .2, 1);
+  padding: 8px 20px calc(16px + var(--safe-bottom)); transform: translateY(110%); visibility: hidden;
+  transition: transform .35s cubic-bezier(.2, .8, .2, 1), visibility 0s .35s;
   max-height: 78%; overflow-y: auto; touch-action: pan-y;
 }
 .grabber { width: 32px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 12px; }
@@ -75,7 +76,7 @@ svg { fill: currentColor; }
 .sheet p { margin: 4px 0; }
 #app[data-mode="pick"] #sheetPick,
 #app[data-mode="plan"] #sheetPlan,
-#app[data-mode="arrive"] #sheetArrive { transform: none; }
+#app[data-mode="arrive"] #sheetArrive { transform: none; visibility: visible; transition-delay: 0s; }
 
 .site-cards { display: grid; gap: 12px; margin-top: 14px; }
 .site-card {

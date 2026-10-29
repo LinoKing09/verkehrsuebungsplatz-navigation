@@ -16,7 +16,8 @@ SITES = [
         "name": "ADAC Verkehrsübungsanlage am Solitude-Ring",
         "short": "Leonberg · Solitude-Ring",
         "area_way": "28728977",
-        "start_way": "49184499",  # Start- und Zielturm
+        # Start/Ziel: Haupteinfahrt von der Mahdentalstraße (L 1187) mit Schranken, beim ADAC-Gebäude
+        "entrance_node": "332964692",
         "bbox": (9.0390, 48.7635, 9.0565, 48.7710),
         "maxspeed": 30,
         # Korrekturen vor Ort: OSM-Weg-ID -> Tags
@@ -34,7 +35,8 @@ SITES = [
         "name": "Verkehrsübungsplatz am Wartberg",
         "short": "Heilbronn · Wartberg",
         "area_way": "24815584",
-        "start_way": "59421553",  # Langer Zug 1
+        # Start/Ziel: Einfahrt über die Zufahrt „Langer Zug“
+        "entrance_node": "60954795",
         "bbox": (9.2505, 49.1578, 9.2602, 49.1645),
         "maxspeed": 30,
         "names": ["Wartbergsteige", "Anfahrberg", "Weinbergweg", "Trollingerstraße", "Blinkerstraße",
@@ -292,9 +294,8 @@ def build(site, cache):
         if t.get("barrier") in ("gate", "lift_gate"):
             pois.append({"t": "gate", "n": idx[n]})
 
-    # Start: Knoten nächst dem Start-Gebäude (Parkplatz / Zielturm)
-    sp = [xy(n) for n in ways[site["start_way"]][0]]
-    sc = (sum(p[0] for p in sp) / len(sp), sum(p[1] for p in sp) / len(sp))
+    # Start und Ziel: Knoten an der Einfahrt des Platzes
+    sc = xy(site["entrance_node"])
     vert_idx = sorted({idx[e["a"]] for e in edges} | {idx[e["b"]] for e in edges})
     start = min(vert_idx, key=lambda k: math.dist(out_nodes[k], sc))
 
